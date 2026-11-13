@@ -5,6 +5,10 @@ shoot it, attach the scan when it comes back from the lab, and write down what y
 learned. It works offline, installs to the phone's home screen, and keeps your data on
 your device.
 
+**Open the app: https://joergbrech.github.io/film-log/** · [How to use it](https://joergbrech.github.io/film-log/docs.html)
+
+[![Tests](https://github.com/joergbrech/film-log/actions/workflows/test.yml/badge.svg)](https://github.com/joergbrech/film-log/actions/workflows/test.yml)
+
 <p>
   <img src="docs/screenshot-roll.png" alt="A roll with two logged frames" width="260">
   <img src="docs/screenshot-settings.png" alt="Settings with folder backup and GitHub sync" width="260">
@@ -28,9 +32,9 @@ There is no account, no server and no tracking. See [Privacy](#privacy).
 
 ## Use it on your phone
 
-The full instructions are in the app under **Settings › How to use it** (`docs.html`). In short:
+The full instructions are on the [How to use it](https://joergbrech.github.io/film-log/docs.html) page, also reachable in the app under **Settings**. In short:
 
-1. **Home screen button.** Open the site in Chrome on Android, tap **⋮ › Add to Home screen ›
+1. **Home screen button.** Open https://joergbrech.github.io/film-log/ in Chrome on Android, tap **⋮ › Add to Home screen ›
    Install**. It then opens full screen with its own icon, also without a connection.
    On iOS use Safari: **Share › Add to Home Screen**.
 2. **Location.** When logging a frame, switch on **Tag where I am** and allow location once.

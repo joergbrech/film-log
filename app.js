@@ -1,7 +1,7 @@
 /* Film Log: the user interface. Data access goes through store.js, backups through sync.js. */
 (() => {
 "use strict";
-const VERSION = "1.0.0";   // keep in step with CACHE in sw.js
+const VERSION = "1.0.1";   // keep in step with CACHE in sw.js
 const Store = window.FilmLogStore, Sync = window.FilmLogSync;
 const METERING = ["Luxmeter app", "Kept settings", "Sunny 16", "Guessed", "Luxmeter + guess", "Other"];
 const APERTURES = ["1.8", "2", "2.8", "4", "5.6", "8", "11", "16"];
