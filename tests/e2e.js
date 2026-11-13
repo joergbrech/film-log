@@ -47,14 +47,20 @@ async function ghRoute(route) {
   await p.click('#logBtn'); await p.check('#f-geo'); await p.waitForTimeout(400);
   ok((await p.inputValue('#f-loc')) === '50.73741, 7.09823', 'GPS toggle fills location');
   ok(!(await p.locator('#geoBtn').count()) && await p.locator('#f-loc').getAttribute('type') === 'hidden', 'no manual location box');
+  ok((await p.inputValue('#f-meter')) === 'App', 'metering defaults to the neutral App');
+  await p.selectOption('#f-meter', '__add'); await p.fill('#f-meter-new', 'My meter app'); await p.click('#f-meter-addbtn'); await p.waitForTimeout(300);
+  ok((await p.inputValue('#f-meter')) === 'My meter app', 'own metering method can be added');
   await p.click('.chips[data-for="f-ap"] button[data-v="2.8"]'); await p.click('.chips[data-for="f-sh"] button[data-v="1/125"]');
-  await p.fill('#f-meterval', '2000'); await p.fill('#f-subject', 'Stream in the forest'); await p.fill('#f-notes', 'Schöne bunte Blätter | soft light');
+  ok((await p.inputValue('#f-meterunit')) === 'EV', 'meter reading defaults to EV'); 
+  await p.fill('#f-meterval', '9.5'); await p.fill('#f-subject', 'Stream in the forest'); await p.fill('#f-notes', 'Schöne bunte Blätter | soft light');
   const png = await (async () => { const pg = await ctx.newPage(); await pg.setContent('<body style="margin:0;background:linear-gradient(45deg,#a33,#33a)">'); const buf = await pg.screenshot({ clip: { x: 0, y: 0, width: 300, height: 200 } }); await pg.close(); return buf; })();
   await p.setInputFiles('#f-photo-file', { name: 'scan.png', mimeType: 'image/png', buffer: png }); await p.waitForTimeout(500);
+  await p.fill('#f-guess', '9'); await p.fill('#f-intent', 'Calm, golden afternoon light');
+  await p.setViewportSize({ width: 390, height: 1480 }); await p.evaluate(() => { document.activeElement.blur(); document.querySelector('.sheet').scrollTop = 0; }); await p.waitForTimeout(2800); await shot('02a-form'); await p.setViewportSize({ width: 390, height: 844 });
   ok((await p.locator('#f-photo-status').innerText()).startsWith('Uploaded'), 'scan attached');
   await p.click('#shotForm button[type=submit] >> nth=1'); await p.waitForTimeout(400);
   ok(await p.locator('#shotList img.thumb:not([hidden])').count() === 1, 'scan thumbnail shows in list');
-  ok((await p.locator('#shotList').innerText()).includes('EV 8.9'), 'EV line shows');
+  ok((await p.locator('#shotList').innerText()).includes('EV 8.9') && (await p.locator('#shotList').innerText()).includes('My meter app'), 'EV line and own method show');
   // sequence shot
   await p.click('#seqBtn'); await p.fill('#f-notes', 'second try'); await p.click('#shotForm button[type=submit] >> nth=1'); await p.waitForTimeout(300);
   await shot('02-roll');
@@ -67,8 +73,9 @@ async function ghRoute(route) {
   await p.click('#seqBtn'); await p.waitForTimeout(300);
   ok(!(await p.isChecked('#f-geo')) && (await p.inputValue('#f-loc')) === '', 'GPS switch stays off after reload, also for sequence shots');
   await p.check('#f-geo'); await p.waitForTimeout(400); await p.click('[data-close]');
-  await p.click('[data-shot] >> nth=0'); await p.waitForTimeout(200);
+  await p.click('[data-shot] .n >> nth=0'); await p.waitForTimeout(200);
   ok(await p.isChecked('#f-geo') && (await p.inputValue('#f-loc')) === '50.73741, 7.09823', 'editing a tagged frame keeps its location'); await p.click('[data-close]');
+  await p.click('#logBtn'); await p.waitForTimeout(300); ok((await p.inputValue('#f-meter')) === 'My meter app', 'new frame starts with the method used last'); await p.click('[data-close]');
   // persistence across reload
   await p.reload(); await p.waitForTimeout(500);
   ok(await snap() === s1 && await blobsOk() === 1, 'data and scan survive reload');
@@ -82,7 +89,8 @@ async function ghRoute(route) {
   const md = await p.evaluate(async () => { const d = await (await navigator.storage.getDirectory()).getDirectoryHandle('rolls'); for await (const [n, h] of d.entries()) if (n.endsWith('.md')) return (await h.getFile()).text(); });
   ok(md.includes('| 1 | 2.8 | 1/125 |') && md.includes('soft light'), 'markdown mirror readable');
   // auto mirror on change
-  await p.click('#logBtn'); await p.fill('#f-subject', 'Third'); await p.click('#shotForm button[type=submit] >> nth=1'); await p.waitForTimeout(2500);
+  await p.click('#logBtn'); await p.selectOption('#f-meterunit', 'lux'); await p.fill('#f-meterval', '2000'); await p.fill('#f-ap', '2.8'); await p.fill('#f-sh', '1/125'); await p.waitForTimeout(100);
+  ok((await p.locator('#evLive').innerText()).includes('meter 9.6'), 'lux readings are converted to EV'); await p.fill('#f-meterval', ''); await p.fill('#f-ap', ''); await p.fill('#f-sh', ''); await p.fill('#f-subject', 'Third'); await p.click('#shotForm button[type=submit] >> nth=1'); await p.waitForTimeout(2500);
   const j = await p.evaluate(async () => { const d = await (await navigator.storage.getDirectory()).getDirectoryHandle('rolls'); for await (const [n, h] of d.entries()) if (n.endsWith('.json')) return JSON.parse(await (await h.getFile()).text()); });
   ok(j.shots.length === 3 && j.shots[0].photoFile.startsWith('scans/'), 'changes are mirrored automatically');
   const s2 = await snap();
@@ -109,7 +117,7 @@ async function ghRoute(route) {
   ok(repo.commits === c0, 'second sync pushes nothing when unchanged');
   await p.click('[data-close]').catch(() => {});
   // edit a frame -> only roll files change
-  await p.click('[data-open]'); await p.waitForTimeout(200); await p.click('[data-shot] >> nth=0'); await p.fill('#f-notes', 'Größe geändert ✓'); await p.click('#shotForm button[type=submit] >> nth=1'); await p.waitForTimeout(300);
+  await p.click('[data-open]'); await p.waitForTimeout(200); await p.click('[data-shot] .n >> nth=0'); await p.fill('#f-notes', 'Größe geändert ✓'); await p.click('#shotForm button[type=submit] >> nth=1'); await p.waitForTimeout(300);
   await p.evaluate(() => FilmLogSync.syncNow('github'));
   ok(repo.commits === c0 + 2, 'edit pushes only json+md (' + (repo.commits - c0) + ' commits)');
   ok([...repo.files].find(([k]) => k.startsWith('rolls/') && k.endsWith('.json'))[1].toString('utf8').includes('Größe geändert ✓'), 'umlauts survive the round trip');

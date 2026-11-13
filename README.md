@@ -11,6 +11,7 @@ your device.
 
 <p>
   <img src="docs/screenshot-roll.png" alt="A roll with two logged frames" width="260">
+  <img src="docs/screenshot-log-frame.png" alt="The form for logging a frame" width="260">
   <img src="docs/screenshot-settings.png" alt="Settings with folder backup and GitHub sync" width="260">
 </p>
 
@@ -19,7 +20,7 @@ your device.
 - **Rolls**: film, camera, default lens, loaded and archived dates, lab and development details.
 - **Frames**: aperture, shutter, lens, how you metered, date and time, subject, intention, notes.
 - **Sequence shot**: one tap copies the previous frame for a series of the same scene.
-- **Light**: enter the meter reading (lux or EV) and see the EV of your settings and how far
+- **Light**: enter the meter reading (EV or lux) and see the EV of your settings and how far
   off they are. Guess the light first and the log tells you how close you were.
 - **Location**: tag frames with the phone's GPS.
 - **After development**: attach a scan to each frame and note the lesson learned.

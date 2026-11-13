@@ -1,9 +1,9 @@
 /* Film Log: the user interface. Data access goes through store.js, backups through sync.js. */
 (() => {
 "use strict";
-const VERSION = "1.0.2";   // keep in step with CACHE in sw.js
+const VERSION = "1.0.3";   // keep in step with CACHE in sw.js
 const Store = window.FilmLogStore, Sync = window.FilmLogSync;
-const METERING = ["Luxmeter app", "Kept settings", "Sunny 16", "Guessed", "Luxmeter + guess", "Other"];
+const METERING = ["App", "Kept settings", "Sunny 16", "Guessed", "App + guess", "Other"];   // built-in ways to meter; people add their own
 const APERTURES = ["1.8", "2", "2.8", "4", "5.6", "8", "11", "16"];
 const SHUTTERS = ["1/1000", "1/500", "1/250", "1/125", "1/60", "1/30", "1/15", "1/8", "1/4", "1/2", "1s", "B"];
 const STOCKS = ["Kodak Gold 200", "Kodak Ultramax 400", "Kodak Portra 400", "Kodak ColorPlus 200", "Fujifilm 400", "Ilford HP5 Plus 400", "Ilford FP4 Plus 125", "Kodak Tri-X 400", "Cinestill 800T"];
@@ -12,6 +12,7 @@ let db = null, downloads = null, assets = null;
 const DEFAULT_LENSES = ["Super Takumar 55mm f/1.8"];
 let lenses = DEFAULT_LENSES.slice();
 let cameras = ["Praktica"];
+let meterings = [];   // metering methods the user added, e.g. the name of a light meter app
 let rolls = [], rollsLoaded = false;
 let shots = [], shotsFor = null, unsubShots = null;
 let currentId = null;
@@ -323,10 +324,14 @@ function wireChips(root) {
 const GEAR = {
   lens: { doc: "settings/lenses", noun: "lens", ph: "e.g. Helios 44-2 58mm f/2", get: () => lenses, set: l => { lenses = l; } },
   camera: { doc: "settings/cameras", noun: "camera", ph: "e.g. Pentax Spotmatic", get: () => cameras, set: l => { cameras = l; } },
+  metering: { doc: "settings/metering", noun: "method", addLabel: "Add your own…", ph: "e.g. the name of your meter or app",
+    get: () => [...new Set([...METERING.slice(0, -1), ...meterings, ...shots.map(x => x.metering).filter(Boolean), "Other"])].sort((a, b) => (a === "Other") - (b === "Other")),
+    stored: () => meterings, set: l => { meterings = l; } },
 };
+const stored = g => (g.stored || g.get)();
 function gearOptions(kind, current) {
   const g = GEAR[kind]; const list = g.get().slice(); if (current && !list.includes(current)) list.push(current);
-  return list.map(l => `<option ${l === current ? "selected" : ""}>${esc(l)}</option>`).join("") + `<option value="__add">Add a ${g.noun}…</option>`;
+  return list.map(l => `<option ${l === current ? "selected" : ""}>${esc(l)}</option>`).join("") + `<option value="__add">${g.addLabel || "Add a " + g.noun + "…"}</option>`;
 }
 function gearField(kind, id, current, label) {
   return `<div class="field"><label for="${id}">${label}</label><select id="${id}">${gearOptions(kind, current)}</select>
@@ -338,8 +343,8 @@ function wireGear(kind, id) {
   $("#" + id + "-addbtn").onclick = async () => {
     const name = $("#" + id + "-new").value.trim(); if (!name) return;
     if (!g.get().includes(name)) {
-      g.set([...g.get(), name]);
-      try { await db.doc(g.doc).set({ list: g.get() }); } catch (e) { toast("Couldn’t save " + g.noun + " (" + (e.code || e) + ")"); }
+      g.set([...stored(g), name]);
+      try { await db.doc(g.doc).set({ list: stored(g) }); } catch (e) { toast("Couldn’t save " + g.noun + " (" + (e.code || e) + ")"); }
     }
     sel.innerHTML = gearOptions(kind, name); sel.value = name; last = name;
     $("#" + id + "-add").hidden = true; $("#" + id + "-new").value = ""; toast(g.noun[0].toUpperCase() + g.noun.slice(1) + " added");
@@ -349,6 +354,11 @@ const lensField = (id, cur, label) => gearField("lens", id, cur, label);
 const wireLens = id => wireGear("lens", id);
 const gearValue = (id, fallback) => $("#" + id).value === "__add" ? fallback : $("#" + id).value;
 
+/* A new frame starts with the way you last metered on this roll, else your own first method, else "App". */
+function defaultMetering() {
+  const last = sortedShots(true).find(x => x.metering && x.metering !== "Kept settings");
+  return (last && last.metering) || meterings[0] || METERING[0];
+}
 function openShotSheet(roll, shot, seq) {
   const isNew = !shot;
   const prev = sortedShots(true)[0];
@@ -360,11 +370,12 @@ function openShotSheet(roll, shot, seq) {
     date: np.date, time: np.time, timeApprox: false, photo: "", lessons: ""
   } : {
     id: newId("s"), n: shots.reduce((m, x) => Math.max(m, x.n || 0), 0) + 1,
-    aperture: "", shutter: "", lens: roll.lens || prev?.lens || lenses[0], metering: "Luxmeter app",
-    meteringNote: "", guessEV: "", meterValue: "", meterUnit: prev?.meterUnit || "lux",
+    aperture: "", shutter: "", lens: roll.lens || prev?.lens || lenses[0], metering: defaultMetering(),
+    meteringNote: "", guessEV: "", meterValue: "", meterUnit: (String(prev?.meterValue ?? "").trim() && prev.meterUnit) || "EV",
     date: np.date, time: np.time, timeApprox: false, subject: "", intention: "", notes: ""
   });
   const iso = rollIso(roll);
+  const formUnit = isNew ? s.meterUnit : (String(s.meterValue ?? "").trim() && s.meterUnit !== "EV" ? "lux" : "EV");   // EV unless this frame has a lux reading
   openSheet(`
     <form id="shotForm" autocomplete="off">
     <div class="sheet-head"><h3>${seq ? `Sequence shot <span class="hint">copied from frame ${esc(prev.n)}</span>` : isNew ? "Log frame" : "Edit frame"}</h3><button type="button" class="btn ghost small" data-close>Cancel</button><button class="btn primary small" type="submit">Save</button></div>
@@ -384,14 +395,15 @@ function openShotSheet(roll, shot, seq) {
       </div>
       ${lensField("f-lens", s.lens, "Lens")}
       <div class="field"><label for="f-meter">How metered</label>
-        <select id="f-meter">${METERING.map(m => `<option ${m === s.metering ? "selected" : ""}>${esc(m)}</option>`).join("")}</select>
+        <select id="f-meter">${gearOptions("metering", s.metering)}</select>
+        <div class="add-lens" id="f-meter-add" hidden><input id="f-meter-new" type="text" placeholder="${esc(GEAR.metering.ph)}"><button type="button" class="btn" id="f-meter-addbtn">Add</button></div>
         <input id="f-meternote" type="text" placeholder="Metering note (optional, e.g. +1 stop, shade under tree)" value="${esc(s.meteringNote)}">
         ${isNew && prev ? `<span class="hint">“Kept settings” copies f/${esc(prev.aperture)} · ${esc(prev.shutter)} from frame ${esc(prev.n)}.</span>` : ""}
       </div>
       <div class="field"><span class="lbl">Light (optional)</span>
         <div class="row2">
           <div class="field"><label for="f-guess">My guess, EV</label><input id="f-guess" class="mono" type="text" inputmode="decimal" placeholder="before metering" value="${esc(s.guessEV ?? "")}"></div>
-          <div class="field"><label for="f-meterval">Meter said</label><div class="meter-in"><input id="f-meterval" class="mono" type="text" inputmode="decimal" placeholder="${s.meterUnit === "EV" ? "EV" : "lux"}" value="${esc(s.meterValue ?? "")}"><select id="f-meterunit" aria-label="Unit"><option ${s.meterUnit !== "EV" ? "selected" : ""}>lux</option><option ${s.meterUnit === "EV" ? "selected" : ""}>EV</option></select></div></div>
+          <div class="field"><label for="f-meterval">Meter said</label><div class="meter-in"><input id="f-meterval" class="mono" type="text" inputmode="decimal" placeholder="${formUnit}" value="${esc(s.meterValue ?? "")}"><select id="f-meterunit" aria-label="Unit"><option ${formUnit === "EV" ? "selected" : ""}>EV</option><option ${formUnit === "lux" ? "selected" : ""}>lux</option></select></div></div>
         </div>
         <span class="hint">Just for fun: guess the light first, then check the app. EV is at ISO 100, like the app; this roll counts as ISO ${esc(iso)}.</span>
       </div>
@@ -460,12 +472,13 @@ function openShotSheet(roll, shot, seq) {
   };
   if (isNew && $("#f-geo").checked) tagHere();
   $("#nowBtn").onclick = () => { const p = nowParts(); $("#f-date").value = p.date; $("#f-time").value = p.time; $("#f-approx").checked = false; toast("Stamped " + p.time); };
-  $("#f-meter").onchange = () => {
+  wireGear("metering", "f-meter");
+  $("#f-meter").addEventListener("change", () => {
     if ($("#f-meter").value === "Kept settings" && isNew && prev) {
       $("#f-ap").value = prev.aperture || ""; $("#f-sh").value = prev.shutter || "";
       $("#f-ap").dispatchEvent(new Event("input")); $("#f-sh").dispatchEvent(new Event("input"));
     }
-  };
+  });
   let photoId = s.photo || "";
   if ($("#f-photo-file")) {
     $("#f-photo-file").onchange = async ev => {
@@ -493,7 +506,7 @@ function openShotSheet(roll, shot, seq) {
     if (locPending) { root.querySelectorAll("[type=submit]").forEach(b => b.disabled = true); await locPending; }
     const data = {
       id: s.id, n: parseInt($("#f-n").value, 10) || 0, aperture: $("#f-ap").value.trim(), shutter: $("#f-sh").value.trim(),
-      lens: $("#f-lens").value === "__add" ? s.lens : $("#f-lens").value, metering: $("#f-meter").value, meteringNote: $("#f-meternote").value.trim(),
+      lens: $("#f-lens").value === "__add" ? s.lens : $("#f-lens").value, metering: gearValue("f-meter", s.metering), meteringNote: $("#f-meternote").value.trim(),
       date: $("#f-date").value, time: $("#f-time").value, timeApprox: $("#f-approx").checked,
       subject: $("#f-subject").value.trim(), intention: $("#f-intent").value.trim(), notes: $("#f-notes").value.trim(),
       guessEV: $("#f-guess").value.trim(), meterValue: $("#f-meterval").value.trim(), meterUnit: $("#f-meterunit").value,
@@ -636,7 +649,7 @@ function parseRollMd(text) {
       const mm = met.match(/^(.*?)\s*\((.*)\)\s*$/); if (mm) { met = mm[1]; metNote = mm[2]; }
       const when = get("date"); const wm = when.match(/(\d{4}-\d{2}-\d{2})?\s*(~|\?)?\s*(\d{1,2}:\d{2})?/) || [];
       frames.push({ n, aperture: get("aperture"), shutter: get("shutter"), lens: get("lens"),
-        metering: METERING.includes(met) ? met : (met ? "Other" : "Luxmeter app"), meteringNote: METERING.includes(met) ? metNote : [met, metNote].filter(Boolean).join(" · "),
+        metering: met || METERING[0], meteringNote: metNote,
         date: wm[1] || "", time: wm[3] ? wm[3].padStart(5, "0") : "", timeApprox: !!wm[2],
         subject: get("subject"), intention: get("intention"), notes: get("notes"), lessons: get("lessons") });
       const f = frames[frames.length - 1];
@@ -848,6 +861,7 @@ $("#settingsBtn").onclick = openSettings;
     if (key !== statusKey) { statusKey = key; if (rollsLoaded) render(); }
   });
   db.doc("settings/cameras").onSnapshot(d => { const l = d.exists && d.data().list; if (Array.isArray(l) && l.length) cameras = l.slice(); });
+  db.doc("settings/metering").onSnapshot(d => { const l = d.exists && d.data().list; meterings = Array.isArray(l) ? l.slice() : []; });
   db.doc("settings/lenses").onSnapshot(d => { const l = d.exists && d.data().list; if (Array.isArray(l) && l.length) lenses = l.slice(); });
   db.collection("rolls").onSnapshot(snap => {
     rolls = snap.docs.map(d => ({ id: d.id, ...d.data() }));

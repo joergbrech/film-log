@@ -125,7 +125,7 @@ function rollBundle(id) {
 }
 function settingsBundle() {
   const get = n => { const d = docs.get("settings/" + n); return d && Array.isArray(d.list) ? d.list.slice() : []; };
-  return { format: "film-log-settings", version: 1, lenses: get("lenses"), cameras: get("cameras") };
+  return { format: "film-log-settings", version: 1, lenses: get("lenses"), cameras: get("cameras"), metering: get("metering") };
 }
 const newer = (a, b) => String(a || "") > String(b || "");
 
@@ -149,7 +149,7 @@ async function mergeRoll(bundle) {
 }
 async function mergeSettings(b) {
   if (!b) return;
-  for (const name of ["lenses", "cameras"]) {
+  for (const name of ["lenses", "cameras", "metering"]) {
     const inc = Array.isArray(b[name]) ? b[name] : []; if (!inc.length) continue;
     const cur = (docs.get("settings/" + name) || {}).list || [];
     const list = cur.concat(inc.filter(x => !cur.includes(x)));

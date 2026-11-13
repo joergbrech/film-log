@@ -178,3 +178,4 @@ header.top .btn + .btn { margin-left: 0; }
 .doc .note { border-left: 2px solid var(--edge); padding: 2px 0 2px 12px; color: var(--muted); }
 .doc table { border-collapse: collapse; width: 100%; font-size: 15px; }
 .doc th, .doc td { text-align: left; padding: 6px 8px 6px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+.field > label.check { font-size: 14px; letter-spacing: 0; text-transform: none; font-weight: 400; }
