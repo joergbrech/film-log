@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://api.github.com; img-src 'self' blob: data:; style-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<title>Film Log</title>
+<meta name="description" content="A small offline logbook for film photography: rolls, frames, exposure, light, location, scans and lessons learned.">
+<meta name="theme-color" content="#eceeec" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#111312" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <button class="btn ghost small" id="backBtn" hidden aria-label="All rolls">&larr; Rolls</button>
+    <h1 id="topTitle">Film log</h1>
+    <button class="btn small ghost" id="settingsBtn">Settings</button>
+    <button class="btn small" id="newRollBtn">+ Roll</button>
+  </header>
+  <main id="main">
+    <p class="status">Loading your rolls…</p>
+    <noscript><p class="status">Film Log needs JavaScript to run. Everything stays on your device.</p></noscript>
+  </main>
+</div>
+<div id="sheetHost"></div>
+<div id="toastHost"></div>
+<script src="store.js"></script>
+<script src="sync.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

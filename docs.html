@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<title>Film Log: how to use it</title>
+<meta name="theme-color" content="#eceeec" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#111312" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="btn ghost small" href="./">&larr; Log</a>
+    <h1>How to use Film Log</h1>
+  </header>
+  <main class="doc">
+    <p>Film Log is a small logbook for film photography. You note each frame as you shoot it: aperture, shutter, how you metered, where you were, what you wanted. When the scans come back you attach them and write down what you learned. It runs in your browser, works offline, and keeps your data on your device.</p>
+    <ul class="toc">
+      <li><a class="btn small" href="#phone">On your phone</a></li>
+      <li><a class="btn small" href="#logging">Logging</a></li>
+      <li><a class="btn small" href="#folder">Folder backup</a></li>
+      <li><a class="btn small" href="#github">GitHub sync</a></li>
+      <li><a class="btn small" href="#files">Files</a></li>
+      <li><a class="btn small" href="#privacy">Privacy</a></li>
+      <li><a class="btn small" href="#about">About</a></li>
+    </ul>
+
+    <h2 id="phone">Set it up on your phone</h2>
+    <h3>1. Put it on the home screen</h3>
+    <ol>
+      <li>Open this site in <b>Chrome</b> on Android.</li>
+      <li>Tap the <b>⋮</b> menu in the top right corner.</li>
+      <li>Tap <b>Add to Home screen</b>, then <b>Install</b>.</li>
+    </ol>
+    <p>Film Log now has its own icon and opens full screen like any other app. After the first visit it also opens without a connection. On an iPhone, use Safari: <b>Share › Add to Home Screen</b>.</p>
+    <h3>2. Allow location, if you want it</h3>
+    <p>When you log a frame, switch on <b>Tag where I am (phone GPS)</b>. Chrome asks once whether the site may use your location. After that every new frame picks up your position by itself. You can switch it off again in the same place.</p>
+    <p class="note">Said no by accident? Tap the icon left of the address bar, or open Android Settings › Apps › Film Log (or Chrome) › Permissions › Location.</p>
+    <h3>3. Set up a backup</h3>
+    <p>Your log is stored inside the browser. That is fast and private, but it is lost if the browser's site data is cleared, the browser is uninstalled or the phone is gone. Set up at least one of the backups below. Until you do, the app shows a reminder.</p>
+
+    <h2 id="logging">Logging a roll</h2>
+    <ol>
+      <li><b>+ Roll</b> when you load a film. The ISO is read from the film name; set it yourself under <b>Edit roll</b> if you push or pull.</li>
+      <li><b>Log frame</b> after each shot. Tap an aperture and a shutter speed, say how you metered, and add a few words. Everything except the frame number is optional.</li>
+      <li><b>Sequence shot</b> copies the previous frame with the exposure set to “Kept settings”, for several frames of the same scene. Change what differs and save.</li>
+      <li><b>Archive roll</b> when it is finished, and fill in the lab details under <b>Edit roll</b>.</li>
+      <li>When the scans are back, open a frame, add its scan and write the <b>lesson learned</b>.</li>
+    </ol>
+    <h3>Light and EV</h3>
+    <p>If you enter what the meter said (lux or EV), the log shows the EV of your settings and how many stops they are over or under the reading. If you guess the light before you meter, enter the guess too and the log tells you how close you were. All EV values are at ISO 100, the scale light meter apps use.</p>
+    <h3>Location</h3>
+    <p>Stored as <code>latitude, longitude</code>. Use the GPS switch, the <b>Here</b> button, or paste coordinates from a maps app. Frames with a location get a map link.</p>
+
+    <h2 id="folder">Backup to a folder on the phone</h2>
+    <p>The log can copy itself into a normal folder as plain files. If the browser data is ever lost, the files are still there.</p>
+    <ol>
+      <li>In Film Log, tap <b>Settings</b>.</li>
+      <li>Under <b>Folder on this device</b>, tap <b>Choose folder</b>.</li>
+      <li>Create or pick a folder, for example <code>Documents/FilmLog</code>, tap <b>Use this folder</b> and then <b>Allow</b>. Chrome does not accept the Downloads folder itself or the top level of the storage, so use a subfolder.</li>
+    </ol>
+    <p>From then on every save is copied there within a couple of seconds.</p>
+    <ul>
+      <li><b>Chrome asks for access again.</b> After a restart Chrome may want you to confirm the folder. The app shows a <b>Reconnect</b> button, which is one tap. Installing the app to the home screen makes this rarer.</li>
+      <li><b>Getting the log back.</b> On a fresh browser or a new phone, choose the same folder. If the log is empty it is restored straight away, otherwise tap <b>Restore from folder</b>. Restoring only adds and updates, it never deletes.</li>
+      <li><b>Protect the folder too.</b> A folder on the phone does not survive a lost phone. Pick one that a sync app (Syncthing, Nextcloud, a cloud drive) already copies elsewhere, or add GitHub sync.</li>
+      <li><b>No Choose folder button?</b> Folder access needs a recent Chrome on Android (or Chrome or Edge on a computer). Firefox and Safari do not have it. Use <b>Save backup file</b> instead: one file in your downloads, restored with <b>Restore backup file</b>.</li>
+    </ul>
+
+    <h2 id="github">Sync to a private GitHub repository</h2>
+    <p>Optional. The log is pushed to a repository that belongs to you, as the same plain files. Useful as an off-phone backup, to read your notes on a computer, or to keep a history of changes.</p>
+    <h3>Once, on github.com</h3>
+    <ol>
+      <li>Create a new repository, for example <code>film-log-data</code>. Set it to <b>Private</b>. It may be completely empty.</li>
+      <li>Open your profile picture › <b>Settings</b> › <b>Developer settings</b> › <b>Personal access tokens</b> › <b>Fine-grained tokens</b> › <b>Generate new token</b>.</li>
+      <li>Under <b>Repository access</b> choose <b>Only select repositories</b> and pick the new repository.</li>
+      <li>Under <b>Permissions › Repository permissions</b> set <b>Contents</b> to <b>Read and write</b>. Nothing else is needed.</li>
+      <li>Choose an expiry date, generate the token and copy it. It starts with <code>github_pat_</code>.</li>
+    </ol>
+    <h3>Then, in Film Log</h3>
+    <ol>
+      <li>Tap <b>Settings</b> and open <b>GitHub sync</b>.</li>
+      <li>Enter the owner (your user name), the repository name and the token.</li>
+      <li>Decide whether scans should be synced too, and whether the app should sync by itself after changes.</li>
+      <li>Tap <b>Save and test</b>. The app checks the token, warns you if the repository is public, and pushes the log.</li>
+    </ol>
+    <ul>
+      <li><b>Sync now</b> pushes the current state. Only files that changed are uploaded.</li>
+      <li><b>Restore from GitHub</b> merges the repository into the log on this device. It only adds and updates.</li>
+      <li>Sync is one-way: phone to repository. It is a backup, not a way to edit on two devices at once. If you do change a roll's <code>.json</code> file elsewhere, set its <code>updatedAt</code> to the current time and use Restore.</li>
+      <li>The token is stored in this browser only and is sent only to <code>api.github.com</code>. A fine-grained token limited to one repository cannot touch anything else in your account. <b>Turn off</b> removes it from the device; you can also revoke it on GitHub at any time.</li>
+      <li>When the token expires, sync reports that the token was rejected. Generate a new one and paste it in.</li>
+    </ul>
+
+    <h2 id="files">The files</h2>
+    <p>Folder backup, GitHub sync and the backup file all use the same layout.</p>
+    <table>
+      <tr><th>File</th><th>What it is</th></tr>
+      <tr><td><code>rolls/&lt;id&gt;.json</code></td><td>The roll and all its frames. This is what restore reads.</td></tr>
+      <tr><td><code>rolls/&lt;id&gt;.md</code></td><td>The same roll as a Markdown table, for reading or for Obsidian. Written fresh on every backup.</td></tr>
+      <tr><td><code>scans/&lt;id&gt;/&lt;frame&gt;-….jpg</code></td><td>Scans you attached to frames.</td></tr>
+      <tr><td><code>settings.json</code></td><td>Your lens and camera lists.</td></tr>
+    </table>
+    <h3>Markdown export and import</h3>
+    <p><b>Export</b> on a roll gives you the Markdown table to copy or save. <b>Import</b> reads such a table back: frames are matched by number, new ones are added, changed ones updated, nothing deleted. This is also how to bring in a log you kept somewhere else.</p>
+    <h3>Writing the log into your scans</h3>
+    <p>The repository contains <code>tools/tag_scans.py</code>. Give it an exported roll (<code>.md</code> or <code>.json</code>) and the folder of lab scans, and it writes camera, lens, aperture, shutter, ISO, date, location and your notes into the image files, so photo software shows the real shooting data. It needs Python and <a href="https://exiftool.org">ExifTool</a>.</p>
+    <pre><code>python tag_scans.py kodak-gold-200.md scans/ --dry-run</code></pre>
+
+    <h2 id="privacy">Privacy</h2>
+    <ul>
+      <li>There is no account, no server and no tracking. The site only delivers the app's files.</li>
+      <li>Your rolls, frames, locations and scans stay in your browser on your device.</li>
+      <li>Data leaves the device only when you set it up: into the folder you chose, into the GitHub repository you named, or into a file you saved.</li>
+      <li>Anyone can use this site for their own log. Everyone gets their own empty log on their own device and nobody sees anyone else's.</li>
+    </ul>
+
+    <h2 id="about">About, licence and AI disclaimer</h2>
+    <p><b>Written with AI.</b> This app, its documentation and the helper script were written almost entirely by an AI coding assistant (Claude, by Anthropic), directed and checked by a human. It has automated tests, but nobody has audited it line by line. Expect the occasional bug.</p>
+    <p><b>No warranty.</b> The software is provided as is, without warranty of any kind. You use it at your own risk, and the authors are not liable for lost data or anything else. Keep a backup of anything you would miss.</p>
+    <p><b>Licence.</b> Film Log is free software under the <a href="https://www.wtfpl.net/">WTFPL, version 2</a>: do what you want with it. The bundled fonts, Familjen Grotesk and JetBrains Mono, are under the SIL Open Font License 1.1; the licence texts are in the <code>fonts</code> folder. The app uses no other third-party code.</p>
+    <p><b>Your own copy.</b> The app is plain HTML, CSS and JavaScript with no build step. Fork the repository, enable GitHub Pages for it, and you have your own instance.</p>
+  </main>
+</div>
+</body>
+</html>
