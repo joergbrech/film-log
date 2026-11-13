@@ -71,7 +71,7 @@ Notes:
 | `sw.js`, `manifest.webmanifest`, `icons/` | Offline use and installation |
 | `docs.html` | The in-app documentation |
 | `tools/tag_scans.py` | EXIF tagging of scans (Python, needs ExifTool) |
-| `tests/e2e.js` | End-to-end test in headless Chromium (needs Playwright) |
+| `tests/e2e.js`, `package.json` | End-to-end test in headless Chromium (needs Playwright) |
 
 Backups and sync share one layout:
 
@@ -91,9 +91,12 @@ installed copies pick up the new files.
 ### Tests
 
 ```
-npm install playwright
-node tests/e2e.js
+npm install
+npx playwright install chromium
+npm test
 ```
+
+GitHub Actions runs the same test on every push and pull request (`.github/workflows/test.yml`).
 
 The test drives the real app against a local server, a stand-in folder and a fake GitHub API.
 It cannot press the system folder picker or the install prompt, so those two steps are only
