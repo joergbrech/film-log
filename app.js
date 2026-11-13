@@ -1,7 +1,7 @@
 /* Film Log: the user interface. Data access goes through store.js, backups through sync.js. */
 (() => {
 "use strict";
-const VERSION = "1.0.1";   // keep in step with CACHE in sw.js
+const VERSION = "1.0.2";   // keep in step with CACHE in sw.js
 const Store = window.FilmLogStore, Sync = window.FilmLogSync;
 const METERING = ["Luxmeter app", "Kept settings", "Sunny 16", "Guessed", "Luxmeter + guess", "Other"];
 const APERTURES = ["1.8", "2", "2.8", "4", "5.6", "8", "11", "16"];
@@ -56,9 +56,9 @@ function evParts(s, iso) {
 const evLineHTML = (s, iso) => { const p = evParts(s, iso); return p.length ? `<span class="ev-line">${p.map(([c, t]) => `<span class="${c}">${esc(t)}</span>`).join("")}</span>` : ""; };
 /* ---------- location ----------
    Stored as one string "lat, lon" (5 decimals, about 1 m) plus locAcc in metres when it came from GPS. */
-const GEO_KEY = "filmlog.geoTag";
-const geoPref = () => { try { return localStorage.getItem(GEO_KEY) === "1"; } catch (e) { return false; } };
-const setGeoPref = on => { try { localStorage.setItem(GEO_KEY, on ? "1" : "0"); } catch (e) {} };
+let geoOn = false;   // the "Tag where I am" switch, remembered from frame to frame
+const geoPref = () => geoOn;
+const setGeoPref = on => { geoOn = !!on; Store.kv.set("geoTag", geoOn).catch(() => {}); };
 function parseLoc(t) {
   const m = String(t ?? "").match(/(-?\d+(?:\.\d+)?)\s*°?\s*([NS])?\s*[,; ]\s*(-?\d+(?:\.\d+)?)\s*°?\s*([EW])?/i);
   if (!m) return null;
@@ -406,11 +406,11 @@ function openShotSheet(roll, shot, seq) {
         </div>
         <label class="check"><input id="f-approx" type="checkbox" ${s.timeApprox ? "checked" : ""}> Time is approximate</label>
       </div>
-      <div class="field"><label for="f-loc">Location (optional)</label>
-        ${isNew ? `<label class="check"><input id="f-geo" type="checkbox" ${geoPref() ? "checked" : ""}> Tag where I am (phone GPS)</label>` : ""}
-        <div class="loc-in"><input id="f-loc" class="mono" type="text" inputmode="decimal" placeholder="lat, lon (or paste from a map)" value="${esc(s.loc || "")}"><button type="button" class="btn" id="geoBtn">Here</button></div>
+      <div class="field"><span class="lbl">Location (optional)</span>
+        <label class="check"><input id="f-geo" type="checkbox" ${(isNew ? geoPref() : !!s.loc) ? "checked" : ""}> Tag where I am (phone GPS)</label>
+        <input id="f-loc" type="hidden" value="${esc(isNew && !geoPref() ? "" : s.loc || "")}">
         <span class="hint" id="geoStatus"></span>
-        <span id="geoMap">${mapLinkHTML(s.loc, "Check on map")}</span>
+        <span id="geoMap">${isNew ? "" : mapLinkHTML(s.loc, "Check on map")}</span>
       </div>
       </div>
       <div class="field"><label for="f-subject">What I shot</label><input id="f-subject" type="text" placeholder="Subject and place" value="${esc(s.subject)}"></div>
@@ -442,26 +442,23 @@ function openShotSheet(roll, shot, seq) {
   $("#f-meterunit").addEventListener("change", () => { $("#f-meterval").placeholder = $("#f-meterunit").value; });
   updateEV();
   if ($("#editExpoBtn")) $("#editExpoBtn").onclick = () => { $("#expoSummary").hidden = true; $("#expoFields").hidden = false; };
-  let locAcc = s.locAcc ?? null, locFromGps = s.loc || "";
-  const showLoc = () => { const v = $("#f-loc").value.trim(); $("#geoMap").innerHTML = mapLinkHTML(v, "Check on map"); if (v && !parseLoc(v)) $("#geoStatus").textContent = "Use “lat, lon”, e.g. 50.73741, 7.09823"; };
-  async function tagHere() {
+  let locAcc = s.locAcc ?? null, locFromGps = s.loc || "", locPending = null;
+  const showLoc = () => { $("#geoMap").innerHTML = mapLinkHTML($("#f-loc").value.trim(), "Check on map"); };
+  function tagHere() {
     const st = $("#geoStatus"); st.textContent = "Finding you…";
-    try {
-      const c = await getPosition(); if (!$("#f-loc")) return;
+    const mine = locPending = getPosition().then(c => {
+      if (!$("#f-loc") || locPending !== mine || !$("#f-geo").checked) return;
       const v = fmtLoc(c.latitude, c.longitude); $("#f-loc").value = v; locAcc = Math.round(c.accuracy); locFromGps = v;
       st.textContent = `Tagged, accurate to about ${locAcc} m`; showLoc();
-    } catch (e) {
-      if (!$("#geoStatus")) return;
-      st.textContent = e.message;
-      if (/^No location access/.test(e.message) && $("#f-geo")) { $("#f-geo").checked = false; setGeoPref(false); }
-    }
+    }, e => { if ($("#geoStatus") && locPending === mine) st.textContent = e.message; }).finally(() => { if (locPending === mine) locPending = null; });
+    return mine;
   }
-  $("#geoBtn").onclick = tagHere;
-  $("#f-loc").addEventListener("input", () => { $("#geoStatus").textContent = ""; showLoc(); });
-  if ($("#f-geo")) {
-    $("#f-geo").onchange = () => { setGeoPref($("#f-geo").checked); if ($("#f-geo").checked && !$("#f-loc").value.trim()) tagHere(); };
-    if ($("#f-geo").checked) tagHere();
-  }
+  $("#f-geo").onchange = () => {
+    const on = $("#f-geo").checked;
+    if (isNew) setGeoPref(on);
+    if (on) tagHere(); else { locPending = null; $("#f-loc").value = ""; $("#geoStatus").textContent = ""; showLoc(); }
+  };
+  if (isNew && $("#f-geo").checked) tagHere();
   $("#nowBtn").onclick = () => { const p = nowParts(); $("#f-date").value = p.date; $("#f-time").value = p.time; $("#f-approx").checked = false; toast("Stamped " + p.time); };
   $("#f-meter").onchange = () => {
     if ($("#f-meter").value === "Kept settings" && isNew && prev) {
@@ -493,6 +490,7 @@ function openShotSheet(roll, shot, seq) {
   });
   $("#shotForm").onsubmit = async e => {
     e.preventDefault();
+    if (locPending) { root.querySelectorAll("[type=submit]").forEach(b => b.disabled = true); await locPending; }
     const data = {
       id: s.id, n: parseInt($("#f-n").value, 10) || 0, aperture: $("#f-ap").value.trim(), shutter: $("#f-sh").value.trim(),
       lens: $("#f-lens").value === "__add" ? s.lens : $("#f-lens").value, metering: $("#f-meter").value, meteringNote: $("#f-meternote").value.trim(),
@@ -839,6 +837,8 @@ $("#settingsBtn").onclick = openSettings;
   catch (e) { $("#main").innerHTML = `<p class="status">This browser won’t let the log store data (${esc(e && e.message || e)}). Private or incognito windows often block it.</p>`; return; }
   db = Store.db; downloads = Store.downloads; assets = Store.assets;
   backupFileLast = (await Store.kv.get("backupFileLast")) || "";
+  geoOn = !!(await Store.kv.get("geoTag"));
+  if (!geoOn) { try { if (localStorage.getItem("filmlog.geoTag") === "1") setGeoPref(true); } catch (e) {} }
   await Sync.init(rollMarkdown);
   let statusKey = "";
   Sync.onStatus(st => {

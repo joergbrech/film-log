@@ -21,7 +21,7 @@ your device.
 - **Sequence shot**: one tap copies the previous frame for a series of the same scene.
 - **Light**: enter the meter reading (lux or EV) and see the EV of your settings and how far
   off they are. Guess the light first and the log tells you how close you were.
-- **Location**: tag frames with the phone's GPS, or paste coordinates.
+- **Location**: tag frames with the phone's GPS.
 - **After development**: attach a scan to each frame and note the lesson learned.
 - **Backups you control**: a folder on the device, a private GitHub repository, or a single
   backup file. All plain JSON and Markdown.

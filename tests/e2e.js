@@ -10,12 +10,12 @@ let fails = 0; const ok = (c, m) => { console.log((c ? 'PASS ' : 'FAIL ') + m); 
 const repo = { files: new Map(), commits: 0, calls: [] };
 const gsha = buf => crypto.createHash('sha1').update(Buffer.concat([Buffer.from(`blob ${buf.length}\0`), buf])).digest('hex');
 async function ghRoute(route) {
-  const q = route.request(); const u = new URL(q.url()); const m = q.method(); const p = u.pathname.replace('/repos/jan/film-log-data', '');
+  const q = route.request(); const u = new URL(q.url()); const m = q.method(); const p = u.pathname.replace('/repos/example/film-log-data', '');
   repo.calls.push(m + ' ' + p);
   const json = (s, o) => route.fulfill({ status: s, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify(o) });
   if (m === 'OPTIONS') return route.fulfill({ status: 204, headers: { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*' } });
   if (q.headers()['authorization'] !== 'Bearer good') return json(401, { message: 'Bad credentials' });
-  if (p === '') return json(200, { full_name: 'jan/film-log-data', private: repo.private !== false, default_branch: 'main', permissions: { push: true } });
+  if (p === '') return json(200, { full_name: 'example/film-log-data', private: repo.private !== false, default_branch: 'main', permissions: { push: true } });
   if (p.startsWith('/git/trees/')) { if (!repo.files.size) return json(409, { message: 'Git Repository is empty.' }); return json(200, { tree: [...repo.files].map(([path, b]) => ({ path, type: 'blob', sha: gsha(b) })) }); }
   if (p.startsWith('/git/blobs/')) { const sha = p.split('/').pop(); for (const b of repo.files.values()) if (gsha(b) === sha) return json(200, { content: b.toString('base64').replace(/(.{60})/g, '$1\n'), encoding: 'base64' }); return json(404, {}); }
   if (p.startsWith('/contents/')) { const fp = decodeURIComponent(p.slice(10)); const body = JSON.parse(q.postData() || '{}'); const cur = repo.files.get(fp);
@@ -46,8 +46,9 @@ async function ghRoute(route) {
   // frame 1 with GPS + scan
   await p.click('#logBtn'); await p.check('#f-geo'); await p.waitForTimeout(400);
   ok((await p.inputValue('#f-loc')) === '50.73741, 7.09823', 'GPS toggle fills location');
+  ok(!(await p.locator('#geoBtn').count()) && await p.locator('#f-loc').getAttribute('type') === 'hidden', 'no manual location box');
   await p.click('.chips[data-for="f-ap"] button[data-v="2.8"]'); await p.click('.chips[data-for="f-sh"] button[data-v="1/125"]');
-  await p.fill('#f-meterval', '2000'); await p.fill('#f-subject', 'Mia am Bach'); await p.fill('#f-notes', 'Schöne bunte Blätter | pipe');
+  await p.fill('#f-meterval', '2000'); await p.fill('#f-subject', 'Stream in the forest'); await p.fill('#f-notes', 'Schöne bunte Blätter | soft light');
   const png = await (async () => { const pg = await ctx.newPage(); await pg.setContent('<body style="margin:0;background:linear-gradient(45deg,#a33,#33a)">'); const buf = await pg.screenshot({ clip: { x: 0, y: 0, width: 300, height: 200 } }); await pg.close(); return buf; })();
   await p.setInputFiles('#f-photo-file', { name: 'scan.png', mimeType: 'image/png', buffer: png }); await p.waitForTimeout(500);
   ok((await p.locator('#f-photo-status').innerText()).startsWith('Uploaded'), 'scan attached');
@@ -57,7 +58,17 @@ async function ghRoute(route) {
   // sequence shot
   await p.click('#seqBtn'); await p.fill('#f-notes', 'second try'); await p.click('#shotForm button[type=submit] >> nth=1'); await p.waitForTimeout(300);
   await shot('02-roll');
-  const s1 = await snap(); ok(JSON.parse(s1)[0][2].length === 2 && s1.includes('2|2.8|1/125|Kept settings|Mia am Bach|second try|50.73741, 7.09823|'), 'sequence shot copied frame');
+  const s1 = await snap(); ok(JSON.parse(s1)[0][2].length === 2 && s1.includes('2|2.8|1/125|Kept settings|Stream in the forest|second try|50.73741, 7.09823|'), 'sequence shot copied frame');
+  // the GPS switch is remembered, and switching it off sticks too
+  await p.click('#logBtn'); await p.waitForTimeout(400);
+  ok(await p.isChecked('#f-geo') && (await p.inputValue('#f-loc')) === '50.73741, 7.09823', 'GPS switch still on for the next frame');
+  await p.uncheck('#f-geo'); ok((await p.inputValue('#f-loc')) === '', 'switching off clears the location'); await p.click('[data-close]');
+  await p.reload(); await p.waitForTimeout(500);
+  await p.click('#seqBtn'); await p.waitForTimeout(300);
+  ok(!(await p.isChecked('#f-geo')) && (await p.inputValue('#f-loc')) === '', 'GPS switch stays off after reload, also for sequence shots');
+  await p.check('#f-geo'); await p.waitForTimeout(400); await p.click('[data-close]');
+  await p.click('[data-shot] >> nth=0'); await p.waitForTimeout(200);
+  ok(await p.isChecked('#f-geo') && (await p.inputValue('#f-loc')) === '50.73741, 7.09823', 'editing a tagged frame keeps its location'); await p.click('[data-close]');
   // persistence across reload
   await p.reload(); await p.waitForTimeout(500);
   ok(await snap() === s1 && await blobsOk() === 1, 'data and scan survive reload');
@@ -69,7 +80,7 @@ async function ghRoute(route) {
   let files = await list(); console.log('   folder:', files.join(', '));
   ok(files.includes('settings.json') && files.filter(f => /^rolls\/.*\.(json|md)$/.test(f)).length === 2 && files.filter(f => f.startsWith('scans/')).length === 1, 'folder has json, md and scan');
   const md = await p.evaluate(async () => { const d = await (await navigator.storage.getDirectory()).getDirectoryHandle('rolls'); for await (const [n, h] of d.entries()) if (n.endsWith('.md')) return (await h.getFile()).text(); });
-  ok(md.includes('| 1 | 2.8 | 1/125 |') && md.includes('pipe'), 'markdown mirror readable');
+  ok(md.includes('| 1 | 2.8 | 1/125 |') && md.includes('soft light'), 'markdown mirror readable');
   // auto mirror on change
   await p.click('#logBtn'); await p.fill('#f-subject', 'Third'); await p.click('#shotForm button[type=submit] >> nth=1'); await p.waitForTimeout(2500);
   const j = await p.evaluate(async () => { const d = await (await navigator.storage.getDirectory()).getDirectoryHandle('rolls'); for await (const [n, h] of d.entries()) if (n.endsWith('.json')) return JSON.parse(await (await h.getFile()).text()); });
@@ -86,7 +97,7 @@ async function ghRoute(route) {
   // settings screen + GitHub sync through the UI
   await p.goto(URL0 + '#'); await p.waitForTimeout(300); await p.click('#backBtn').catch(() => {}); await p.waitForTimeout(200);
   await p.click('#settingsBtn'); await p.waitForTimeout(200); await shot('03-settings');
-  await p.fill('#gh-owner', 'jan'); await p.fill('#gh-repo', 'film-log-data'); await p.fill('#gh-token', 'bad'); await p.click('#ghSave'); await p.waitForTimeout(400);
+  await p.fill('#gh-owner', 'example'); await p.fill('#gh-repo', 'film-log-data'); await p.fill('#gh-token', 'bad'); await p.click('#ghSave'); await p.waitForTimeout(400);
   ok((await p.locator('#ghMsg').innerText()).includes('token was rejected'), 'bad token explained');
   repo.private = false; await p.fill('#gh-token', 'good'); await p.click('#ghSave'); await p.waitForTimeout(400);
   ok((await p.locator('#ghMsg').innerText()).includes('public'), 'public repo warning'); repo.private = true;
@@ -104,7 +115,7 @@ async function ghRoute(route) {
   ok([...repo.files].find(([k]) => k.startsWith('rolls/') && k.endsWith('.json'))[1].toString('utf8').includes('Größe geändert ✓'), 'umlauts survive the round trip');
   const s3 = await snap();
   // wipe and restore from GitHub
-  await wipe(); await p.evaluate(async () => { await FilmLogSync.setGithub({ owner: 'jan', repo: 'film-log-data', branch: 'main', token: 'good', scans: true }); });
+  await wipe(); await p.evaluate(async () => { await FilmLogSync.setGithub({ owner: 'example', repo: 'film-log-data', branch: 'main', token: 'good', scans: true }); });
   const r2 = await p.evaluate(() => FilmLogSync.restoreGithub());
   ok(await snap() === s3 && await blobsOk() === 1, 'restore from GitHub brings back everything ' + JSON.stringify(r2));
   // delete roll -> tombstone removes remote files

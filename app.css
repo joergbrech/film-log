@@ -125,7 +125,6 @@ header.top h1 { font-size: 20px; margin: 0; font-weight: 700; letter-spacing: -0
 .meter-in { display: grid; grid-template-columns: 1fr 5.5em; gap: 6px; }
 .ev-live { font-family: var(--font-mono); font-size: 14px; background: var(--chip); border-radius: 8px; padding: 8px 10px; }
 .ev-live:empty { display: none; }
-.loc-in { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
 .loc-link { font-size: 13px; color: var(--muted); text-decoration: underline; text-underline-offset: 2px; justify-self: start; }
 .shot .loc-link { position: relative; z-index: 1; }
 
