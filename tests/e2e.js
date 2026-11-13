@@ -53,11 +53,12 @@ async function ghRoute(route) {
   await p.click('.chips[data-for="f-ap"] button[data-v="2.8"]'); await p.click('.chips[data-for="f-sh"] button[data-v="1/125"]');
   ok((await p.inputValue('#f-meterunit')) === 'EV', 'meter reading defaults to EV'); 
   await p.fill('#f-meterval', '9.5'); await p.fill('#f-subject', 'Stream in the forest'); await p.fill('#f-notes', 'Schöne bunte Blätter | soft light');
-  const png = await (async () => { const pg = await ctx.newPage(); await pg.setContent('<body style="margin:0;background:linear-gradient(45deg,#a33,#33a)">'); const buf = await pg.screenshot({ clip: { x: 0, y: 0, width: 300, height: 200 } }); await pg.close(); return buf; })();
+  const png = await (async () => { const pg = await ctx.newPage(); await pg.setContent('<body style="margin:0;background:radial-gradient(circle at 70% 20%,#f4d58d 0,#e0a84a 18%,transparent 45%),linear-gradient(170deg,#c9a24b 0,#6f8f3a 45%,#2f4a24 75%,#1d2b1a 100%)">'); const buf = await pg.screenshot({ clip: { x: 0, y: 0, width: 300, height: 200 } }); await pg.close(); return buf; })();
   await p.setInputFiles('#f-photo-file', { name: 'scan.png', mimeType: 'image/png', buffer: png }); await p.waitForTimeout(500);
   await p.fill('#f-date', '2026-10-17'); await p.fill('#f-time', '16:20'); await p.fill('#f-guess', '9'); await p.fill('#f-intent', 'Calm, golden afternoon light');
-  await p.setViewportSize({ width: 390, height: 1480 }); await p.evaluate(() => { document.activeElement.blur(); document.querySelector('.sheet').scrollTop = 0; }); await p.waitForTimeout(2800); await shot('02a-form'); await p.setViewportSize({ width: 390, height: 844 });
   ok((await p.locator('#f-photo-status').innerText()).startsWith('Uploaded'), 'scan attached');
+  await p.fill('#f-lessons', 'Sharp and warm, a touch dark. Open up half a stop under trees.');
+  await p.setViewportSize({ width: 390, height: 2050 }); await p.evaluate(() => { document.activeElement.blur(); document.querySelector('.sheet').scrollTop = 0; }); await p.waitForTimeout(2800); await shot('02a-form'); await p.setViewportSize({ width: 390, height: 844 });
   await p.click('#shotForm button[type=submit] >> nth=1'); await p.waitForTimeout(400);
   ok(await p.locator('#shotList img.thumb:not([hidden])').count() === 1, 'scan thumbnail shows in list');
   ok((await p.locator('#shotList').innerText()).includes('EV 8.9') && (await p.locator('#shotList').innerText()).includes('My meter app'), 'EV line and own method show');
