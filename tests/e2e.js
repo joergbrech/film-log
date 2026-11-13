@@ -40,7 +40,7 @@ async function ghRoute(route) {
   ok((await p.locator('#main').innerText()).includes('No rolls yet'), 'empty state shown');
   await shot('01-empty');
   // new roll
-  await p.click('#newRollBtn'); await p.fill('#r-stock', 'Kodak Gold 200'); await p.click('#rollForm button[type=submit] >> nth=1'); await p.waitForTimeout(300);
+  await p.click('#newRollBtn'); await p.fill('#r-stock', 'Kodak Gold 200'); await p.fill('#r-loaded', '2026-10-12'); await p.click('#rollForm button[type=submit] >> nth=1'); await p.waitForTimeout(300);
   ok(await p.locator('#logBtn').isVisible(), 'roll created and opened');
   ok(!(await p.locator('#seqBtn').count()), 'no sequence button before first frame');
   // frame 1 with GPS + scan
@@ -55,15 +55,15 @@ async function ghRoute(route) {
   await p.fill('#f-meterval', '9.5'); await p.fill('#f-subject', 'Stream in the forest'); await p.fill('#f-notes', 'Schöne bunte Blätter | soft light');
   const png = await (async () => { const pg = await ctx.newPage(); await pg.setContent('<body style="margin:0;background:linear-gradient(45deg,#a33,#33a)">'); const buf = await pg.screenshot({ clip: { x: 0, y: 0, width: 300, height: 200 } }); await pg.close(); return buf; })();
   await p.setInputFiles('#f-photo-file', { name: 'scan.png', mimeType: 'image/png', buffer: png }); await p.waitForTimeout(500);
-  await p.fill('#f-guess', '9'); await p.fill('#f-intent', 'Calm, golden afternoon light');
+  await p.fill('#f-date', '2026-10-17'); await p.fill('#f-time', '16:20'); await p.fill('#f-guess', '9'); await p.fill('#f-intent', 'Calm, golden afternoon light');
   await p.setViewportSize({ width: 390, height: 1480 }); await p.evaluate(() => { document.activeElement.blur(); document.querySelector('.sheet').scrollTop = 0; }); await p.waitForTimeout(2800); await shot('02a-form'); await p.setViewportSize({ width: 390, height: 844 });
   ok((await p.locator('#f-photo-status').innerText()).startsWith('Uploaded'), 'scan attached');
   await p.click('#shotForm button[type=submit] >> nth=1'); await p.waitForTimeout(400);
   ok(await p.locator('#shotList img.thumb:not([hidden])').count() === 1, 'scan thumbnail shows in list');
   ok((await p.locator('#shotList').innerText()).includes('EV 8.9') && (await p.locator('#shotList').innerText()).includes('My meter app'), 'EV line and own method show');
   // sequence shot
-  await p.click('#seqBtn'); await p.fill('#f-notes', 'second try'); await p.click('#shotForm button[type=submit] >> nth=1'); await p.waitForTimeout(300);
-  await shot('02-roll');
+  await p.click('#seqBtn'); await p.fill('#f-date', '2026-10-17'); await p.fill('#f-time', '16:22'); await p.fill('#f-notes', 'second try'); await p.click('#shotForm button[type=submit] >> nth=1'); await p.waitForTimeout(300);
+  await p.waitForTimeout(2800); await shot('02-roll');
   const s1 = await snap(); ok(JSON.parse(s1)[0][2].length === 2 && s1.includes('2|2.8|1/125|Kept settings|Stream in the forest|second try|50.73741, 7.09823|'), 'sequence shot copied frame');
   // the GPS switch is remembered, and switching it off sticks too
   await p.click('#logBtn'); await p.waitForTimeout(400);
