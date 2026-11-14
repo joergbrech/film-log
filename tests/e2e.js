@@ -27,7 +27,7 @@ async function ghRoute(route) {
 (async () => {
   await new Promise(r => server.listen(8765, r)); const URL0 = 'http://localhost:8765/';
   const b = await chromium.launch();
-  const ctx = await b.newContext({ locale: 'en-GB', viewport: { width: 390, height: 844 }, geolocation: { latitude: 50.73741, longitude: 7.09823, accuracy: 9 }, permissions: ['geolocation'], acceptDownloads: true });
+  const ctx = await b.newContext({ locale: 'en-US', viewport: { width: 390, height: 844 }, geolocation: { latitude: 50.73741, longitude: 7.09823, accuracy: 9 }, permissions: ['geolocation'], acceptDownloads: true });
   await ctx.route('https://api.github.com/**', ghRoute);
   const p = await ctx.newPage(); const errs = [];
   p.on('pageerror', e => errs.push('pageerror ' + e.message)); p.on('console', m => { if (m.type() === 'error') errs.push('console ' + m.text()); });
