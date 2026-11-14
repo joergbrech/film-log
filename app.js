@@ -1,7 +1,7 @@
 /* Film Log: the user interface. Data access goes through store.js, backups through sync.js. */
 (() => {
 "use strict";
-const VERSION = "1.0.4";   // keep in step with CACHE in sw.js
+const VERSION = "1.0.5";   // keep in step with CACHE in sw.js
 const Store = window.FilmLogStore, Sync = window.FilmLogSync;
 const METERING = ["App", "Kept settings", "Sunny 16", "Guessed", "App + guess", "Other"];   // built-in ways to meter; people add their own
 const APERTURES = ["1.8", "2", "2.8", "4", "5.6", "8", "11", "16"];
@@ -408,7 +408,7 @@ function openShotSheet(roll, shot, seq) {
           <div class="field"><label for="f-guess">My guess, EV</label><input id="f-guess" class="mono" type="text" inputmode="decimal" placeholder="before metering" value="${esc(s.guessEV ?? "")}"></div>
           <div class="field"><label for="f-meterval">Meter said</label><div class="meter-in"><input id="f-meterval" class="mono" type="text" inputmode="decimal" placeholder="${formUnit}" value="${esc(s.meterValue ?? "")}"><select id="f-meterunit" aria-label="Unit"><option ${formUnit === "EV" ? "selected" : ""}>EV</option><option ${formUnit === "lux" ? "selected" : ""}>lux</option></select></div></div>
         </div>
-        <span class="hint">Just for fun: guess the light first, then check the app. EV is at ISO 100, like the app; this roll counts as ISO ${esc(iso)}.</span>
+        <span class="hint">Just for fun: guess the light first, then check your meter. EV describes the light itself, on the ISO 100 scale. Your film speed (ISO ${esc(iso)}) is taken into account automatically.</span>
       </div>
       <div class="field"><label for="f-ap">Aperture f/</label><input id="f-ap" class="mono" type="text" inputmode="decimal" placeholder="2.8" value="${esc(s.aperture)}">${chipRow("f-ap", APERTURES, s.aperture)}</div>
       <div class="field"><label for="f-sh">Shutter</label><input id="f-sh" class="mono" type="text" placeholder="1/125" value="${esc(s.shutter)}">${chipRow("f-sh", SHUTTERS, s.shutter)}</div>

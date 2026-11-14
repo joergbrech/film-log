@@ -15,7 +15,7 @@ your device.
   <img src="docs/screenshot-settings.png" alt="Settings with folder backup and GitHub sync" width="260">
 </p>
 
-<sub>Sample photo: ["Waputik Range"](https://commons.wikimedia.org/wiki/File:Waputik_Range.jpg) by Jeekyu1980, [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), scaled down.</sub>
+<sub>Sample photo: ["Waputik Range"](https://commons.wikimedia.org/wiki/File:Waputik_Range.jpg) by Jeekyu1980, [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), scaled down. Camera, lens, film and exposure follow the photographer's description; the time, meter readings, notes and lesson in the sample data are made up.</sub>
 
 ## What it does
 

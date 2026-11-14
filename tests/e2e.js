@@ -54,12 +54,12 @@ async function ghRoute(route) {
   ok((await p.inputValue('#f-meter')) === 'My meter app', 'own metering method can be added');
   await p.click('.chips[data-for="f-ap"] button[data-v="5.6"]'); await p.click('.chips[data-for="f-sh"] button[data-v="1/125"]');
   ok((await p.inputValue('#f-meterunit')) === 'EV', 'meter reading defaults to EV'); 
-  await p.fill('#f-meterval', '10.5'); await p.fill('#f-subject', 'Waputik Range from Peyto Lake'); await p.fill('#f-notes', 'Clouds moving fast | soft light');
+  await p.fill('#f-meterval', '11'); await p.fill('#f-subject', 'Waputik Range from Peyto Lake'); await p.fill('#f-notes', 'Clouds moving fast | soft light');
   const scan = fs.readFileSync(path.join(__dirname, 'fixtures', 'sample-scan.jpg'));
   await p.setInputFiles('#f-photo-file', { name: 'scan.jpg', mimeType: 'image/jpeg', buffer: scan }); await p.waitForTimeout(500);
-  await p.fill('#f-date', '2019-06-25'); await p.fill('#f-time', '15:40'); await p.fill('#f-guess', '11'); await p.fill('#f-intent', 'Storm light on the peaks');
+  await p.fill('#f-date', '2019-06-25'); await p.fill('#f-time', '15:40'); await p.fill('#f-guess', '11.5'); await p.fill('#f-intent', 'Storm light on the peaks');
   ok((await p.locator('#f-photo-status').innerText()).startsWith('Uploaded'), 'scan attached');
-  await p.fill('#f-lessons', 'Sky is right, the forest went almost black. Half a stop more next time.');
+  await p.fill('#f-lessons', 'The dark forest makes the storm light glow. Trusting the meter paid off.');
   await p.setViewportSize({ width: 390, height: 2050 }); await p.evaluate(() => { document.activeElement.blur(); document.querySelector('.sheet').scrollTop = 0; }); await p.waitForTimeout(2800); await shot('02a-form'); await p.setViewportSize({ width: 390, height: 844 });
   await p.click('#shotForm button[type=submit] >> nth=1'); await p.waitForTimeout(400);
   ok(await p.locator('#shotList img.thumb:not([hidden])').count() === 1, 'scan thumbnail shows in list');

@@ -1,7 +1,7 @@
 /* Film Log service worker: keeps the app shell available offline.
    Cached files are served first and refreshed in the background, so an update
    shows up the second time the app is opened. Bump CACHE with every release. */
-const CACHE = "film-log-1.0.4";
+const CACHE = "film-log-1.0.5";
 const SHELL = ["./", "index.html", "docs.html", "app.css", "app.js", "store.js", "sync.js", "manifest.webmanifest",
   "icons/icon.svg", "icons/icon-192.png", "icons/icon-512.png", "icons/icon-maskable-512.png",
   "fonts/familjen-grotesk-latin-400-normal.woff2", "fonts/familjen-grotesk-latin-500-normal.woff2",

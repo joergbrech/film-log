@@ -22,7 +22,7 @@ by the app's layout, in `docs/screenshot-log-frame.png`. The photo and that scre
 stay under CC BY-SA 4.0; the WTFPL does not apply to them. The photo is used only by the
 test and the README, and is not part of the app. Camera, lens, film, aperture and shutter
 in the sample data follow the photographer's description; the time of day, the meter
-readings and the notes are made up.
+readings, the notes and the lesson learned are made up and are not the photographer's.
 
 ## Tools
 
