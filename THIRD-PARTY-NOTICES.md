@@ -1,6 +1,6 @@
 # Third-party notices
 
-Film Log's own code (everything outside `fonts/`) is under the WTFPL, see `LICENSE`.
+Film Log's own code (everything except the fonts and the sample photo named below) is under the WTFPL, see `LICENSE`.
 It contains no third-party code. The repository bundles two font families, which
 keep their own licence:
 
