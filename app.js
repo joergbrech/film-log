@@ -1,7 +1,7 @@
 /* Film Log: the user interface. Data access goes through store.js, backups through sync.js. */
 (() => {
 "use strict";
-const VERSION = "1.0.3";   // keep in step with CACHE in sw.js
+const VERSION = "1.0.4";   // keep in step with CACHE in sw.js
 const Store = window.FilmLogStore, Sync = window.FilmLogSync;
 const METERING = ["App", "Kept settings", "Sunny 16", "Guessed", "App + guess", "Other"];   // built-in ways to meter; people add their own
 const APERTURES = ["1.8", "2", "2.8", "4", "5.6", "8", "11", "16"];
@@ -23,7 +23,11 @@ const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": 
 const pad = n => String(n).padStart(2, "0");
 const nowParts = () => { const d = new Date(); return { date: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`, time: `${pad(d.getHours())}:${pad(d.getMinutes())}` }; };
 const newId = p => p + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-const fmtDate = d => { if (!d) return ""; const [y, m, dd] = d.split("-"); return `${dd}.${m}.${y}`; };
+/* Dates and times are shown the way the device's language writes them (17.10.2026, 10/17/2026, …); stored values stay ISO. */
+const D_FULL = { day: "2-digit", month: "2-digit", year: "numeric" }, D_SHORT = { day: "2-digit", month: "2-digit" }, T_HM = { hour: "2-digit", minute: "2-digit" };
+const isoDate = d => { const [y, m, dd] = String(d).split("-").map(Number); return new Date(y, (m || 1) - 1, dd || 1); };
+const fmtDate = (d, opts) => { if (!d) return ""; const x = isoDate(d); return isNaN(x) ? d : x.toLocaleDateString(undefined, opts || D_FULL); };
+const fmtTime = t => { const m = String(t || "").match(/^(\d{1,2}):(\d{2})/); return m ? new Date(2000, 0, 1, +m[1], +m[2]).toLocaleTimeString(undefined, T_HM) : (t || ""); };
 const shutterLabel = s => s || "";
 const apLabel = a => a ? "f/" + a : "";
 
@@ -143,7 +147,7 @@ function hydrateBlobs(root) {
     if (url) { img.src = url; img.hidden = false; }
   });
 }
-const fmtStamp = iso => { if (!iso) return "never"; const d = new Date(iso); return `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`; };
+const fmtStamp = iso => { if (!iso) return "never"; const d = new Date(iso); return isNaN(d) ? "never" : `${d.toLocaleDateString(undefined, D_FULL)} ${d.toLocaleTimeString(undefined, T_HM)}`; };
 function bannerHTML() {
   const st = Sync.status;
   if (st.folder.state === "needs-permission") return `<div class="banner warn">Your backup folder “${esc(st.folder.name)}” needs access again. <button class="btn small" data-banner="reconnect">Reconnect</button></div>`;
@@ -174,9 +178,8 @@ function render() {
 function rollRange(r) {
   const a = r.firstShot, b = r.lastShot;
   if (!a) return "";
-  const [ay, am, ad] = a.split("-"), [by, bm, bd] = (b || a).split("-");
-  if (a === b || !b) return `${ad}.${am}.${ay}`;
-  return ay === by ? `${ad}.${am}. – ${bd}.${bm}.${by}` : `${ad}.${am}.${ay} – ${bd}.${bm}.${by}`;
+  if (a === b || !b) return fmtDate(a);
+  return `${fmtDate(a, a.slice(0, 4) === b.slice(0, 4) ? D_SHORT : D_FULL)} – ${fmtDate(b)}`;
 }
 const DEV = [["devLab", "Lab"], ["devOptions", "Development options"], ["devSent", "Sent to lab"], ["devBack", "Back from lab"], ["devNotes", "Development notes"]];
 function devBlock(r) {
@@ -224,7 +227,7 @@ function sortedShots(desc) {
 
 function shotHTML(s, iso) {
   const kept = s.metering === "Kept settings";
-  const when = [fmtDate(s.date), s.time ? (s.timeApprox ? "~" : "") + s.time : (s.timeApprox ? "time unknown" : "")].filter(Boolean).join(" ");
+  const when = [fmtDate(s.date), s.time ? (s.timeApprox ? "~" : "") + fmtTime(s.time) : (s.timeApprox ? "time unknown" : "")].filter(Boolean).join(" ");
   return `<button class="shot" data-shot="${esc(s.id)}">
     <span class="n">${esc(s.n)}<small>▶${esc(s.n)}A</small></span>
     <span class="body">
@@ -386,7 +389,7 @@ function openShotSheet(roll, shot, seq) {
         <div class="sub">${esc(s.lens)}</div>
         <div class="sub">${esc(s.metering)}${s.meteringNote ? " · " + esc(s.meteringNote) : ""}${meterLabel(s) ? " · " + esc(meterLabel(s)) : ""}</div>
         ${evLineHTML(s, iso)}
-        <div class="sub">${esc(fmtDate(s.date))} ${s.time ? (s.timeApprox ? "~" : "") + esc(s.time) : ""}</div>
+        <div class="sub">${esc(fmtDate(s.date))} ${s.time ? (s.timeApprox ? "~" : "") + esc(fmtTime(s.time)) : ""}</div>
         ${s.loc ? mapLinkHTML(s.loc) : ""}
       </div>`}
       <div id="expoFields" style="display:grid;gap:14px" ${isNew ? "" : "hidden"}>
