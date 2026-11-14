@@ -27,7 +27,7 @@ async function ghRoute(route) {
 (async () => {
   await new Promise(r => server.listen(8765, r)); const URL0 = 'http://localhost:8765/';
   const b = await chromium.launch();
-  const ctx = await b.newContext({ locale: 'en-US', viewport: { width: 390, height: 844 }, geolocation: { latitude: 50.73741, longitude: 7.09823, accuracy: 9 }, permissions: ['geolocation'], acceptDownloads: true });
+  const ctx = await b.newContext({ locale: 'en-US', viewport: { width: 390, height: 844 }, geolocation: { latitude: 51.7256, longitude: -116.5228, accuracy: 9 }, permissions: ['geolocation'], acceptDownloads: true });
   await ctx.route('https://api.github.com/**', ghRoute);
   const p = await ctx.newPage(); const errs = [];
   p.on('pageerror', e => errs.push('pageerror ' + e.message)); p.on('console', m => { if (m.type() === 'error') errs.push('console ' + m.text()); });
@@ -40,42 +40,44 @@ async function ghRoute(route) {
   ok((await p.locator('#main').innerText()).includes('No rolls yet'), 'empty state shown');
   await shot('01-empty');
   // new roll
-  await p.click('#newRollBtn'); await p.fill('#r-stock', 'Kodak Gold 200'); await p.fill('#r-loaded', '2026-10-12'); await p.click('#rollForm button[type=submit] >> nth=1'); await p.waitForTimeout(300);
+  // sample data follows the documented settings of tests/fixtures/sample-scan.jpg (see THIRD-PARTY-NOTICES.md)
+  await p.evaluate(async () => { const d = FilmLogStore.db; await d.doc('settings/cameras').set({ list: ['Olympus OM-2N'] }); await d.doc('settings/lenses').set({ list: ['Zuiko 85mm f/2'] }); }); await p.waitForTimeout(200);
+  await p.click('#newRollBtn'); await p.fill('#r-stock', 'Kodak Gold 200'); await p.fill('#r-loaded', '2019-06-22'); await p.click('#rollForm button[type=submit] >> nth=1'); await p.waitForTimeout(300);
   ok(await p.locator('#logBtn').isVisible(), 'roll created and opened');
   ok(!(await p.locator('#seqBtn').count()), 'no sequence button before first frame');
   // frame 1 with GPS + scan
   await p.click('#logBtn'); await p.check('#f-geo'); await p.waitForTimeout(400);
-  ok((await p.inputValue('#f-loc')) === '50.73741, 7.09823', 'GPS toggle fills location');
+  ok((await p.inputValue('#f-loc')) === '51.72560, -116.52280', 'GPS toggle fills location');
   ok(!(await p.locator('#geoBtn').count()) && await p.locator('#f-loc').getAttribute('type') === 'hidden', 'no manual location box');
   ok((await p.inputValue('#f-meter')) === 'App', 'metering defaults to the neutral App');
   await p.selectOption('#f-meter', '__add'); await p.fill('#f-meter-new', 'My meter app'); await p.click('#f-meter-addbtn'); await p.waitForTimeout(300);
   ok((await p.inputValue('#f-meter')) === 'My meter app', 'own metering method can be added');
-  await p.click('.chips[data-for="f-ap"] button[data-v="2.8"]'); await p.click('.chips[data-for="f-sh"] button[data-v="1/125"]');
+  await p.click('.chips[data-for="f-ap"] button[data-v="5.6"]'); await p.click('.chips[data-for="f-sh"] button[data-v="1/125"]');
   ok((await p.inputValue('#f-meterunit')) === 'EV', 'meter reading defaults to EV'); 
-  await p.fill('#f-meterval', '9.5'); await p.fill('#f-subject', 'Stream in the forest'); await p.fill('#f-notes', 'Schöne bunte Blätter | soft light');
-  const png = await (async () => { const pg = await ctx.newPage(); await pg.setContent('<body style="margin:0;background:radial-gradient(circle at 70% 20%,#f4d58d 0,#e0a84a 18%,transparent 45%),linear-gradient(170deg,#c9a24b 0,#6f8f3a 45%,#2f4a24 75%,#1d2b1a 100%)">'); const buf = await pg.screenshot({ clip: { x: 0, y: 0, width: 300, height: 200 } }); await pg.close(); return buf; })();
-  await p.setInputFiles('#f-photo-file', { name: 'scan.png', mimeType: 'image/png', buffer: png }); await p.waitForTimeout(500);
-  await p.fill('#f-date', '2026-10-17'); await p.fill('#f-time', '16:20'); await p.fill('#f-guess', '9'); await p.fill('#f-intent', 'Calm, golden afternoon light');
+  await p.fill('#f-meterval', '10.5'); await p.fill('#f-subject', 'Waputik Range from Peyto Lake'); await p.fill('#f-notes', 'Clouds moving fast | soft light');
+  const scan = fs.readFileSync(path.join(__dirname, 'fixtures', 'sample-scan.jpg'));
+  await p.setInputFiles('#f-photo-file', { name: 'scan.jpg', mimeType: 'image/jpeg', buffer: scan }); await p.waitForTimeout(500);
+  await p.fill('#f-date', '2019-06-25'); await p.fill('#f-time', '15:40'); await p.fill('#f-guess', '11'); await p.fill('#f-intent', 'Storm light on the peaks');
   ok((await p.locator('#f-photo-status').innerText()).startsWith('Uploaded'), 'scan attached');
-  await p.fill('#f-lessons', 'Sharp and warm, a touch dark. Open up half a stop under trees.');
+  await p.fill('#f-lessons', 'Sky is right, the forest went almost black. Half a stop more next time.');
   await p.setViewportSize({ width: 390, height: 2050 }); await p.evaluate(() => { document.activeElement.blur(); document.querySelector('.sheet').scrollTop = 0; }); await p.waitForTimeout(2800); await shot('02a-form'); await p.setViewportSize({ width: 390, height: 844 });
   await p.click('#shotForm button[type=submit] >> nth=1'); await p.waitForTimeout(400);
   ok(await p.locator('#shotList img.thumb:not([hidden])').count() === 1, 'scan thumbnail shows in list');
-  ok((await p.locator('#shotList').innerText()).includes('EV 8.9') && (await p.locator('#shotList').innerText()).includes('My meter app'), 'EV line and own method show');
+  ok((await p.locator('#shotList').innerText()).includes('EV 10.9') && (await p.locator('#shotList').innerText()).includes('My meter app'), 'EV line and own method show');
   // sequence shot
-  await p.click('#seqBtn'); await p.fill('#f-date', '2026-10-17'); await p.fill('#f-time', '16:22'); await p.fill('#f-notes', 'second try'); await p.click('#shotForm button[type=submit] >> nth=1'); await p.waitForTimeout(300);
+  await p.click('#seqBtn'); await p.fill('#f-date', '2019-06-25'); await p.fill('#f-time', '15:42'); await p.fill('#f-notes', 'second try'); await p.click('#shotForm button[type=submit] >> nth=1'); await p.waitForTimeout(300);
   await p.waitForTimeout(2800); await shot('02-roll');
-  const s1 = await snap(); ok(JSON.parse(s1)[0][2].length === 2 && s1.includes('2|2.8|1/125|Kept settings|Stream in the forest|second try|50.73741, 7.09823|'), 'sequence shot copied frame');
+  const s1 = await snap(); ok(JSON.parse(s1)[0][2].length === 2 && s1.includes('2|5.6|1/125|Kept settings|Waputik Range from Peyto Lake|second try|51.72560, -116.52280|'), 'sequence shot copied frame');
   // the GPS switch is remembered, and switching it off sticks too
   await p.click('#logBtn'); await p.waitForTimeout(400);
-  ok(await p.isChecked('#f-geo') && (await p.inputValue('#f-loc')) === '50.73741, 7.09823', 'GPS switch still on for the next frame');
+  ok(await p.isChecked('#f-geo') && (await p.inputValue('#f-loc')) === '51.72560, -116.52280', 'GPS switch still on for the next frame');
   await p.uncheck('#f-geo'); ok((await p.inputValue('#f-loc')) === '', 'switching off clears the location'); await p.click('[data-close]');
   await p.reload(); await p.waitForTimeout(500);
   await p.click('#seqBtn'); await p.waitForTimeout(300);
   ok(!(await p.isChecked('#f-geo')) && (await p.inputValue('#f-loc')) === '', 'GPS switch stays off after reload, also for sequence shots');
   await p.check('#f-geo'); await p.waitForTimeout(400); await p.click('[data-close]');
   await p.click('[data-shot] .n >> nth=0'); await p.waitForTimeout(200);
-  ok(await p.isChecked('#f-geo') && (await p.inputValue('#f-loc')) === '50.73741, 7.09823', 'editing a tagged frame keeps its location'); await p.click('[data-close]');
+  ok(await p.isChecked('#f-geo') && (await p.inputValue('#f-loc')) === '51.72560, -116.52280', 'editing a tagged frame keeps its location'); await p.click('[data-close]');
   await p.click('#logBtn'); await p.waitForTimeout(300); ok((await p.inputValue('#f-meter')) === 'My meter app', 'new frame starts with the method used last'); await p.click('[data-close]');
   // persistence across reload
   await p.reload(); await p.waitForTimeout(500);
@@ -88,7 +90,7 @@ async function ghRoute(route) {
   let files = await list(); console.log('   folder:', files.join(', '));
   ok(files.includes('settings.json') && files.filter(f => /^rolls\/.*\.(json|md)$/.test(f)).length === 2 && files.filter(f => f.startsWith('scans/')).length === 1, 'folder has json, md and scan');
   const md = await p.evaluate(async () => { const d = await (await navigator.storage.getDirectory()).getDirectoryHandle('rolls'); for await (const [n, h] of d.entries()) if (n.endsWith('.md')) return (await h.getFile()).text(); });
-  ok(md.includes('| 1 | 2.8 | 1/125 |') && md.includes('soft light'), 'markdown mirror readable');
+  ok(md.includes('| 1 | 5.6 | 1/125 |') && md.includes('soft light'), 'markdown mirror readable');
   // auto mirror on change
   await p.click('#logBtn'); await p.selectOption('#f-meterunit', 'lux'); await p.fill('#f-meterval', '2000'); await p.fill('#f-ap', '2.8'); await p.fill('#f-sh', '1/125'); await p.waitForTimeout(100);
   ok((await p.locator('#evLive').innerText()).includes('meter 9.6'), 'lux readings are converted to EV'); await p.fill('#f-meterval', ''); await p.fill('#f-ap', ''); await p.fill('#f-sh', ''); await p.fill('#f-subject', 'Third'); await p.click('#shotForm button[type=submit] >> nth=1'); await p.waitForTimeout(2500);

@@ -12,6 +12,20 @@ keep their own licence:
 The font files are unmodified Latin subsets as distributed by the Fontsource project
 (`@fontsource/familjen-grotesk` 5.3.0 and `@fontsource/jetbrains-mono` 5.3.0).
 
+## Sample photo
+
+`tests/fixtures/sample-scan.jpg` is a scaled-down copy of
+["Waputik Range"](https://commons.wikimedia.org/wiki/File:Waputik_Range.jpg) by
+Jeekyu1980, from Wikimedia Commons, licensed under
+[CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). It also appears, cropped
+by the app's layout, in `docs/screenshot-log-frame.png`. The photo and that screenshot
+stay under CC BY-SA 4.0; the WTFPL does not apply to them. The photo is used only by the
+test and the README, and is not part of the app. Camera, lens, film, aperture and shutter
+in the sample data follow the photographer's description; the time of day, the meter
+readings and the notes are made up.
+
+## Tools
+
 Not bundled, but used if you run the optional tools:
 
 - `tools/tag_scans.py` calls [ExifTool](https://exiftool.org) by Phil Harvey, which you install yourself.

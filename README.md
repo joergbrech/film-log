@@ -15,6 +15,8 @@ your device.
   <img src="docs/screenshot-settings.png" alt="Settings with folder backup and GitHub sync" width="260">
 </p>
 
+<sub>Sample photo: ["Waputik Range"](https://commons.wikimedia.org/wiki/File:Waputik_Range.jpg) by Jeekyu1980, [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), scaled down.</sub>
+
 ## What it does
 
 - **Rolls**: film, camera, default lens, loaded and archived dates, lab and development details.
@@ -131,5 +133,5 @@ EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY ARIS
 THE USE OF THE SOFTWARE.
 
 The bundled fonts, Familjen Grotesk and JetBrains Mono, are under the SIL Open Font License
-1.1. See [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md). The app contains no other
-third-party code.
+1.1. The sample photo in the screenshots and the test is under CC BY-SA 4.0. See
+[THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md). The app contains no other third-party code.
